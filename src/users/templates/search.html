@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h2>Результаты поиска</h2>
+
+    <form method="GET" action="{% url 'search' %}" class="mb-3">
+        <input type="text" name="query" value="{{ query }}" class="form-control" placeholder="Поиск файлов...">
+    </form>
+
+    {% if files %}
+        <ul class="list-group">
+            {% for file in files %}
+                <li class="list-group-item">
+                    <a href="{% url 'download' file.id %}">{{ file.name }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p class="text-muted">Ничего не найдено.</p>
+    {% endif %}
+{% endblock %}
