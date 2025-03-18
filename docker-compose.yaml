@@ -33,7 +33,7 @@ services:
 
   minio:
     image: minio/minio
-    container_name: cs_minio
+    container_name: cs-minio
     restart: always
     env_file:
       - .env
@@ -52,9 +52,9 @@ services:
       - .env
     depends_on:
       postgres:
-          condition: service_healthy
+        condition: service_healthy
       redis:
-          condition: service_healthy
+        condition: service_healthy
       minio:
         condition: service_started
     ports:

@@ -47,7 +47,7 @@ ROOT_URLCONF = 'src.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [BASE_DIR / 'src/storage/templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -101,9 +101,13 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-STATIC_URL = 'static/'
+# Static files (css, JavaScript, Images)
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    BASE_DIR / 'src/static',  # Путь к папке с вашими статическими файлами
+]
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
+STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -150,7 +154,7 @@ DEFAULT_FILE_STORAGE = "storages.backends.s3boto3.S3Boto3Storage"
 
 AWS_ACCESS_KEY_ID = os.getenv("MINIO_ROOT_USER", "minioadmin")
 AWS_SECRET_ACCESS_KEY = os.getenv("MINIO_ROOT_PASSWORD", "12345678")
-AWS_S3_ENDPOINT_URL = os.getenv("MINIO_ENDPOINT", "http://localhost:9000")
+AWS_S3_ENDPOINT_URL = os.getenv("MINIO_ENDPOINT", "http://cs_minio:9000")
 AWS_STORAGE_BUCKET_NAME = "user-files"
 AWS_S3_ADDRESSING_STYLE = "path"  # Используется путь для файлов
 AWS_QUERYSTRING_AUTH = False  # Без аутентификации для URL

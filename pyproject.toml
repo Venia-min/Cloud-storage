@@ -24,6 +24,7 @@ pytest-django = "^4.10.0"
 factory-boy = "^3.3.3"
 boto3 = "^1.37.13"
 django-storages = "^1.14.5"
+minio = "^7.2.15"
 
 [build-system]
 requires = ["poetry-core"]
