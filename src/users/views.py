@@ -4,10 +4,6 @@ from django.shortcuts import render, redirect
 from src.users.forms import UserRegistrationForm, UserLoginForm
 
 
-def index_view(request):
-    return render(request, "index.html")
-
-
 def search_view(request):
     return render(request, "search.html")
 

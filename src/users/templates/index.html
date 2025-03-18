@@ -4,48 +4,20 @@
     <h2>Ваши файлы</h2>
 
     {% if user.is_authenticated %}
-        <!-- Навигация (breadcrumbs) -->
-        <nav aria-label="breadcrumb">
-            <ol class="breadcrumb">
-                {% for folder in breadcrumbs %}
-                    <li class="breadcrumb-item">
-                        <a href="?path={{ folder.path }}">{{ folder.name }}</a>
-                    </li>
-                {% endfor %}
-            </ol>
-        </nav>
-
         <!-- Форма поиска -->
         <form method="GET" action="{% url 'search' %}" class="mb-3">
             <input type="text" name="query" class="form-control" placeholder="Поиск файлов...">
         </form>
 
+        <!-- Навигация (breadcrumbs) -->
+        {% include "file_navigate.html" %}
+
         <!-- Список файлов -->
-        <div class="list-group">
-            {% for file in files %}
-                <div class="list-group-item d-flex justify-content-between align-items-center">
-                    {{ file.name }}
-                    <div>
-                        <a href="{% url 'download' file.id %}" class="btn btn-sm btn-primary">Скачать</a>
-                        <a href="{% url 'rename' file.id %}" class="btn btn-sm btn-warning">Переименовать</a>
-                        <a href="{% url 'delete' file.id %}" class="btn btn-sm btn-danger">Удалить</a>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
+        {% include "file_list.html" %}
 
         <!-- Форма загрузки -->
-        <div class="container mt-4 d-flex justify-content-center">
-            <div class="border p-3 rounded w-50">
-                <h4 class="text-center">Загрузить файл</h4>
-                <form method="POST" enctype="multipart/form-data">
-                    {% csrf_token %}
-                    <input type="file" name="file" class="form-control mb-2">
-                    <button type="submit" class="btn btn-success w-100">
-                        Загрузить</button>
-                </form>
-            </div>
-        </div>
+        {% include "file_upload.html" %}
+
     {% else %}
         <p>Чтобы просматривать файлы, войдите в систему.</p>
     {% endif %}

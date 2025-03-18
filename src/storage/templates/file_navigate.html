@@ -1,0 +1,9 @@
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        {% for folder in breadcrumbs %}
+            <li class="breadcrumb-item">
+                <a href="?path={{ folder.path }}">{{ folder.name }}</a>
+            </li>
+        {% endfor %}
+    </ol>
+</nav>

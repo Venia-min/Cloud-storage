@@ -1,0 +1,63 @@
+<div id="file-list" class="list-group">
+    {% for file in files %}
+        <div class="list-group-item d-flex justify-content-between align-items-center">
+            <!-- Отображаем имя файла -->
+            {{ file.name }}
+
+            <div class="btn-group">
+                <!-- Кнопка для скачивания -->
+                <a href="{% url 'file-download' file.id|urlencode %}"
+                   class="btn btn-sm btn-primary">Скачать</a>
+
+                <!-- Кнопка для удаления -->
+                <a href="{% url 'file-delete' file.id|urlencode %}"
+                   class="btn btn-sm btn-danger">Удалить</a>
+
+                <!-- Кнопка для переименования -->
+                <button type="button" class="btn btn-sm btn-warning" data-bs-toggle="modal" data-bs-target="#renameModal"
+                    data-file-id="{{ file.id }}" data-file-name="{{ file.name }}">
+                    Переименовать
+                </button>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<!-- Модальное окно для переименования файла -->
+<div class="modal fade" id="renameModal" tabindex="-1" aria-labelledby="renameModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="renameModalLabel">Переименовать файл</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <form id="rename-form" method="POST"
+                      action="{% url 'file-rename' %}">
+                    {% csrf_token %}
+                    <input type="hidden" id="file-id" name="file-id">
+                    <div class="mb-3">
+                        <label for="new-name" class="form-label">Новое имя</label>
+                        <input type="text" class="form-control" id="new-name" name="new-name" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Переименовать</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Подключение Bootstrap JavaScript -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // Скрипт для передачи данных файла в модальное окно
+    const renameButtons = document.querySelectorAll('[data-bs-toggle="modal"]');
+    renameButtons.forEach(button => {
+        button.addEventListener('click', function () {
+            const fileId = this.getAttribute('data-file-id');
+            const fileName = this.getAttribute('data-file-name');
+            document.getElementById('file-id').value = fileId;
+            document.getElementById('new-name').value = fileName;
+        });
+    });
+</script>
