@@ -24,18 +24,26 @@
                      aria-labelledby="dropdownMenuButton">
                     <a class="dropdown-item"
                     href="{% url 'file-download' file.id %}">
-                    Скачать</a>
-                <!-- Кнопка для удаления -->
-                    <a class="dropdown-item text-danger"
-                        href="{% url 'file-delete' file.id %}">
-                        Удалить</a>
-                <!-- Кнопка для переименования -->
-                    <a class="dropdown-item text-warning"
-                       data-bs-toggle="modal"
-                       data-bs-target="#renameModal"
-                       data-file-id="{{ file.id }}"
-                       data-file-name="{{ file.name }}">
-                        Переименовать</a>
+                        Скачать
+                    </a>
+                    <!-- Кнопка для удаления -->
+                    <form action="{% url 'file-delete' file.id %}"
+                          method="POST"
+                          class="dropdown-item-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="current_path" value="{{ current_path }}">
+                        <button type="submit" class="dropdown-item text-danger">
+                            Удалить
+                        </button>
+                    </form>
+                    <!-- Кнопка для переименования -->
+                    <button type="button" class="dropdown-item text-warning"
+                            data-bs-toggle="modal"
+                            data-bs-target="#renameModal"
+                            data-file-id="{{ file.id }}"
+                            data-file-name="{{ file.name }}">
+                        Переименовать
+                    </button>
                 </div>
             </div>
         </div>

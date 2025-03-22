@@ -6,15 +6,15 @@ from src.storage.views import (
     delete_file_view,
     # list_files_view,
     rename_file_view,
-    create_folder_view,
+    create_folder_view, list_files_view,
 )
 
 urlpatterns = [
-    path('upload/', upload_file_view, name="file-upload"),
-    path('download/<path:file_name>/', download_file_view,
+    path('files/upload/', upload_file_view, name="file-upload"),
+    path('files/download/<path:file_name>/', download_file_view,
          name="file-download"),
-    path('delete/<path:file_name>/', delete_file_view, name="file-delete"),
-    path('rename/', rename_file_view, name="file-rename"),
-    # path('list/', list_files_view, name="file-list"),
-    path('create-folder/', create_folder_view, name="create-folder"),
+    path('files/delete/<path:file_name>/', delete_file_view, name="file-delete"),
+    path('files/rename/', rename_file_view, name="file-rename"),
+    path('files/<path:path>/', list_files_view, name="file-list"),
+    path('files/create/', create_folder_view, name="create-folder"),
 ]

@@ -25,13 +25,21 @@
             <div class="modal-body">
                 <form id="create-folder-form" method="POST" action="{% url 'create-folder' %}">
                     {% csrf_token %}
+                    <input type="hidden" name="current_path" value="{{ current_path }}">
                     <div class="mb-3">
                         <label for="folder-name" class="form-label">Название</label>
                         <input type="text" class="form-control" id="folder-name" name="folder_name" required>
                     </div>
-                    <button type="submit" class="btn btn-primary">Создать</button>
-                    <button type="submit" class="btn btn-secondary ms-2"
-                            name="create_and_go" value="true">И перейти</button>
+                    <div class="btn-group" role="group">
+                        <!-- Кнопка для создания -->
+                        <button type="submit" class="btn btn-primary" name="create_and_go" value="false">
+                            Создать
+                        </button>
+                        <!-- Кнопка для создания и перехода -->
+                        <button type="submit" class="btn btn-secondary ms-2" name="create_and_go" value="true">
+                            И перейти
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>

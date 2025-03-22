@@ -9,10 +9,12 @@
   <div class="container mt-4">
     <form id="upload-form" method="POST" enctype="multipart/form-data"
           data-url="{% url 'file-upload' %}">
-      {% csrf_token %}
       <input type="hidden" name="current_path" value="{{ current_path }}">
-      <div class="drop-zone">
-        <label for="file-input" class="drop-zone__prompt">Перетащите файл или нажмите для загрузки</label>
+      {% csrf_token %}
+      <div class="drop-zone" id="dropZone">
+        <label for="file-input" class="drop-zone__prompt">
+          Перетащите файл или нажмите для загрузки
+        </label>
         <input type="file" name="file" class="drop-zone__input" id="file-input">
       </div>
 

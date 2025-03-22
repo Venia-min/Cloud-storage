@@ -52,8 +52,6 @@ bucket_name=settings.AWS_STORAGE_BUCKET_NAME) -> str:
     """Загрузка файла в MinIO"""
     create_bucket(bucket_name)
     full_file_path = get_user_file_path(user_id, file_name)
-    print("name:", file_name)
-    print("full:", full_file_path)
     try:
         s3_client.upload_fileobj(file, bucket_name, full_file_path)
     except (NoCredentialsError, ClientError) as exc:
