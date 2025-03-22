@@ -25,7 +25,7 @@ s3_client = boto3.client(
 
 
 # Создание бакета в MinIO
-def create_bucket(bucket_name: str):
+def create_bucket(bucket_name: str) -> None:
     """
     Create bucket.
     :param bucket_name:
@@ -43,89 +43,104 @@ def create_bucket(bucket_name: str):
                                       f"{bucket_name}: {exc}")
 
 
-def check_user_permission(user_id, filename):
-    """Проверка прав доступа пользователя на файл"""
-    if not filename.startswith(f"user-{user_id}-files/"):
-        raise PermissionDenied(f"У вас нет прав для работы с файлом: {filename}")
+def get_user_file_path(user_id: int, file_name: str) -> str:
+    return f"user-{user_id}-files/{file_name}"
 
 
-def upload_file(file, user_id: int, filename: str, bucket_name=settings.AWS_STORAGE_BUCKET_NAME):
+def upload_file(file, user_id: int, file_name: str,
+bucket_name=settings.AWS_STORAGE_BUCKET_NAME) -> str:
     """Загрузка файла в MinIO"""
     create_bucket(bucket_name)
-    object_name = f"user-{user_id}-files/{filename}"
-
+    full_file_path = get_user_file_path(user_id, file_name)
+    print("name:", file_name)
+    print("full:", full_file_path)
     try:
-        s3_client.upload_fileobj(file, bucket_name, object_name)
+        s3_client.upload_fileobj(file, bucket_name, full_file_path)
     except (NoCredentialsError, ClientError) as exc:
-        raise FileUploadError(filename, exc)
+        raise FileUploadError(file_name, exc)
 
-    return object_name
+    return file_name
 
 
-def download_file(user_id: int, filename: str, bucket_name=settings.AWS_STORAGE_BUCKET_NAME):
+def download_file(
+        user_id: int,
+        file_name: str,
+        bucket_name=settings.AWS_STORAGE_BUCKET_NAME
+) -> str:
     """Скачивание файла из MinIO"""
-    object_name = f"user-{user_id}-files/{filename}"
+    full_file_path = get_user_file_path(user_id, file_name)
 
     try:
-        with open(filename, 'wb') as file:
-            s3_client.download_fileobj(bucket_name, object_name, file)
+        with open(file_name, 'wb') as file:
+            s3_client.download_fileobj(bucket_name, full_file_path, file)
     except (NoCredentialsError, ClientError) as exc:
-        raise FileDownloadError(filename, exc)
+        raise FileDownloadError(file_name, exc)
 
-    return filename
+    return file_name
 
 
 def delete_file(
         user_id: int,
-        filename: str,
+        file_name: str,
         bucket_name=settings.AWS_STORAGE_BUCKET_NAME
 ) -> bool:
     """Удаление файла из MinIO"""
-    check_user_permission(user_id, filename)
-
+    full_file_path = get_user_file_path(user_id, file_name)
     try:
-        s3_client.delete_object(Bucket=bucket_name, Key=filename)
+        s3_client.delete_object(Bucket=bucket_name, Key=full_file_path)
     except ClientError as exc:
-        raise FileDeleteError(filename, exc)
-
-    return True
+        raise FileDeleteError(file_name, exc)
+    else:
+        return True
 
 
 def list_user_files(
         user_id: int,
         path: str="",
         bucket_name=settings.AWS_STORAGE_BUCKET_NAME
-):
+) -> list[dict]|list:
     """Получение списка файлов пользователя"""
-    prefix = f"user-{user_id}-files/{path}"  # Префикс папки пользователя
-
+    full_file_path = get_user_file_path(user_id, path)
+    # Префикс папки пользователя
+    files = []
+    exist_files = set()
     try:
-        response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=prefix)
-        files = []
+        response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=full_file_path)
         for obj in response.get("Contents", []):
+            # Адрес вглубь от текущей папки для определения папка/файл
+            long_file_name = obj["Key"].removeprefix(full_file_path)
+            # Имя только текущего файла
+            file_name = long_file_name.split("/")[0]
+            file_path = path + file_name
+            if file_name in exist_files or file_name == ".keep":
+                continue
+            exist_files.add(file_name)
             files.append({
-                "id": obj["Key"], # Используем полный путь в качестве ID
-                "name": obj["Key"].replace(prefix, "")})
-        return files
+                "id": file_path, # Используем путь в качестве ID
+                "name": file_name,
+                "is_folder": "/" in long_file_name
+            })
     except ClientError as exc:
         raise StorageError(f"Ошибка при получении списка файлов пользователя "
                            f"{user_id}: {exc}")
+    return sorted(files, key=lambda x: not x["is_folder"])
 
 
-def generate_breadcrumbs(path):
+def generate_breadcrumbs(path: str) -> list[dict]:
     """Генерация списка breadcrumbs для навигации"""
-    breadcrumbs = []
+    breadcrumbs = [{"name": "Root", "path": ""}]
     if path:
         parts = path.split("/")
-        for i in enumerate(parts):
+        for i, part in enumerate(parts):
             breadcrumbs.append({
-                "name": parts[i],
-                "path": "/".join(parts[:i + 1])
+                "name": part,
+                "path": "/".join(parts[:i + 1]) + "/"
             })
     return breadcrumbs
 
 
-def rename_file(file_id, new_name, bucket_name = settings.AWS_STORAGE_BUCKET_NAME):
+def rename_file(file_name: str, new_name: str, bucket_name: str =
+settings.AWS_STORAGE_BUCKET_NAME) -> None:
     """
     Rename file in minio.
     :param file_id:
@@ -134,21 +149,34 @@ def rename_file(file_id, new_name, bucket_name = settings.AWS_STORAGE_BUCKET_NAM
     :return:
     """
 
-    # Получаем текущий путь файла в MinIO
-    current_key = file_id
-    new_key = "/".join(current_key.split("/")[:-1]) + "/" + new_name
+    # Формируем новый путь файла в MinIO
+    new_key = "/".join(file_name.split("/")[:-1]) + "/" + new_name
 
     # Переименование файла в MinIO (копируем и удаляем старый)
     s3_client.copy_object(
         Bucket=bucket_name,
-        CopySource={"Bucket": bucket_name, "Key": current_key},
+        CopySource={"Bucket": bucket_name, "Key": file_name},
         Key=new_key
     )
-    s3_client.delete_object(Bucket=bucket_name, Key=current_key)
+    s3_client.delete_object(Bucket=bucket_name, Key=file_name)
 
 
-def get_file_url(user_id, filename):
+def get_file_url(user_id: int, file_name: str) -> str:
     """Получаем URL для файла в MinIO"""
-    object_name = f"user-{user_id}-files/{filename}"
+    full_file_path = get_user_file_path(user_id, file_name)
     return (f"{settings.AWS_S3_ENDPOINT_URL}/"
-            f"{settings.AWS_STORAGE_BUCKET_NAME}/{object_name}")
+            f"{settings.AWS_STORAGE_BUCKET_NAME}/{full_file_path}")
+
+
+def create_folder(user_id: int, file_name: str, bucket_name: str =
+settings.AWS_STORAGE_BUCKET_NAME) -> bool:
+    """Создание папки в хранилище MinIO/S3."""
+    full_file_path = get_user_file_path(user_id, file_name)
+    placeholder_file = full_file_path + "/.keep"
+    try:
+        # Создаем папку (загружаем пустой объект)
+        s3_client.put_object(Bucket=bucket_name, Key=placeholder_file, Body=b'')
+    except ClientError as exc:
+        raise Exception(f"Не удалось создать папку: {str(exc)}")
+    else:
+        return True

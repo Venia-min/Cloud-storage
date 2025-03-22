@@ -1,9 +1,48 @@
-<nav aria-label="breadcrumb">
-    <ol class="breadcrumb">
+<nav class="d-flex align-items-center justify-content-between"
+     aria-label="breadcrumb">
+    <ol class="breadcrumb mb-0">
         {% for folder in breadcrumbs %}
             <li class="breadcrumb-item">
                 <a href="?path={{ folder.path }}">{{ folder.name }}</a>
             </li>
         {% endfor %}
     </ol>
+    <!-- Кнопка для открытия модального окна для создания папки -->
+    <button class="btn folder-btn" data-bs-toggle="modal"
+            data-bs-target="#createFolderModal">
+        +
+    </button>
 </nav>
+
+<!-- Модальное окно для создания папки -->
+<div class="modal fade" id="createFolderModal" tabindex="-1" aria-labelledby="createFolderModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createFolderModalLabel">Создать папку</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
+            <div class="modal-body">
+                <form id="create-folder-form" method="POST" action="{% url 'create-folder' %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="folder-name" class="form-label">Название</label>
+                        <input type="text" class="form-control" id="folder-name" name="folder_name" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Создать</button>
+                    <button type="submit" class="btn btn-secondary ms-2"
+                            name="create_and_go" value="true">И перейти</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const modal = new bootstrap.Modal(document.getElementById('createFolderModal'));
+        const openModalButton = document.querySelector("[data-bs-toggle='modal']");
+        openModalButton.addEventListener("click", function () {
+            modal.show();
+        });
+    });
+</script>

@@ -63,6 +63,48 @@
   align-items: center; /* Центрируем содержимое кнопки по вертикали */
 }
 
-upload-btn:hover {
+.upload-btn:hover {
+  background-color: #007f5f; /* Цвет кнопки при наведении */
+}
+
+.menu-btn {
+  width: 60px; /* Задаем кнопку на всю ширину контейнера */
+  height: 30px
+  padding: 0px; /* Дополнительные отступы */
+  margin-right: auto;
+  font-size: 15px; /* Увеличиваем размер текста */
+  font-weight: bold; /* Жирный шрифт */
+  cursor: pointer; /* Курсор в виде указателя */
+  background-color: #009578; /* Цвет фона */
+  color: #fff; /* Цвет текста */
+  border: none; /* Без рамки */
+  border-radius: 15px; /* Закругленные углы */
+  display: flex;
+  justify-content: center; /* Центрируем содержимое кнопки */
+  align-items: center; /* Центрируем содержимое кнопки по вертикали */
+}
+
+.menu-btn:hover {
+  background-color: #007f5f; /* Цвет кнопки при наведении */
+}
+
+.folder-btn {
+  width: 60px; /* Задаем кнопку на всю ширину контейнера */
+  height: 30px
+  padding: 0px; /* Дополнительные отступы */
+  margin-left: auto;
+  font-size: 15px; /* Увеличиваем размер текста */
+  font-weight: bold; /* Жирный шрифт */
+  cursor: pointer; /* Курсор в виде указателя */
+  background-color: #009578; /* Цвет фона */
+  color: #fff; /* Цвет текста */
+  border: none; /* Без рамки */
+  border-radius: 15px; /* Закругленные углы */
+  display: flex;
+  justify-content: center; /* Центрируем содержимое кнопки */
+  align-items: center; /* Центрируем содержимое кнопки по вертикали */
+}
+
+.folder-btn:hover {
   background-color: #007f5f; /* Цвет кнопки при наведении */
 }
