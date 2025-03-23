@@ -85,7 +85,14 @@ def delete_file(
     """Удаление файла из MinIO"""
     full_file_path = get_user_file_path(user_id, file_name)
     try:
-        s3_client.delete_object(Bucket=bucket_name, Key=full_file_path)
+        included_files = s3_client.list_objects_v2(
+            Bucket=bucket_name,
+            Prefix=full_file_path
+        )
+        objects_to_delete = [{"Key": obj["Key"]} for obj in included_files[
+                "Contents"]]
+        s3_client.delete_objects(Bucket=bucket_name,
+                                 Delete={"Objects": objects_to_delete})
     except ClientError as exc:
         raise FileDeleteError(file_name, exc)
     else:
@@ -109,6 +116,8 @@ def list_user_files(
             long_file_name = obj["Key"].removeprefix(full_file_path)
             # Имя только текущего файла
             file_name = long_file_name.split("/")[0]
+            if "/" in long_file_name:
+                file_name += "/"
             file_path = path + file_name
             if file_name in exist_files or file_name == ".keep":
                 continue
