@@ -4,10 +4,6 @@ from django.shortcuts import render, redirect
 from src.users.forms import UserRegistrationForm, UserLoginForm
 
 
-def search_view(request):
-    return render(request, "search.html")
-
-
 def register_view(request):
     if request.method == "POST":
         form = UserRegistrationForm(request.POST)

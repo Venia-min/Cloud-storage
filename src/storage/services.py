@@ -4,7 +4,6 @@ from botocore.exceptions import (
     NoCredentialsError
 )
 from django.conf import settings
-from django.core.exceptions import PermissionDenied
 
 from src.storage.exceptions import (
     BucketCreationError,
@@ -27,7 +26,7 @@ s3_client = boto3.client(
 # Создание бакета в MinIO
 def create_bucket(bucket_name: str) -> None:
     """
-    Create bucket.
+    Create bucket in MinIO.
     :param bucket_name:
     :return:
     """
@@ -39,17 +38,37 @@ def create_bucket(bucket_name: str) -> None:
         try:
             s3_client.create_bucket(Bucket=bucket_name)
         except ClientError as exc:
-            raise BucketCreationError(f"Ошибка при создании бакета "
-                                      f"{bucket_name}: {exc}")
+            raise BucketCreationError(
+                f"Ошибка при создании бакета {bucket_name}: {exc}"
+            )
 
 
 def get_user_file_path(user_id: int, file_name: str) -> str:
     return f"user-{user_id}-files/{file_name}"
 
 
+# def get_file_url(user_id: int, file_name: str) -> str:
+#     """
+#     Получаем URL для файла в MinIO.
+#     :param user_id:
+#     :param file_name:
+#     :return:
+#     """
+#     full_file_path = get_user_file_path(user_id, file_name)
+#     return (f"{settings.AWS_S3_ENDPOINT_URL}/"
+#             f"{settings.AWS_STORAGE_BUCKET_NAME}/{full_file_path}")
+
+
 def upload_file(file, user_id: int, file_name: str,
 bucket_name=settings.AWS_STORAGE_BUCKET_NAME) -> str:
-    """Загрузка файла в MinIO"""
+    """
+    Загрузка файла в MinIO.
+    :param file:
+    :param user_id:
+    :param file_name:
+    :param bucket_name:
+    :return:
+    """
     create_bucket(bucket_name)
     full_file_path = get_user_file_path(user_id, file_name)
     try:
@@ -65,7 +84,13 @@ def download_file(
         file_name: str,
         bucket_name=settings.AWS_STORAGE_BUCKET_NAME
 ) -> str:
-    """Скачивание файла из MinIO"""
+    """
+    Скачивание файла из MinIO.
+    :param user_id:
+    :param file_name:
+    :param bucket_name:
+    :return:
+    """
     full_file_path = get_user_file_path(user_id, file_name)
 
     try:
@@ -82,7 +107,13 @@ def delete_file(
         file_name: str,
         bucket_name=settings.AWS_STORAGE_BUCKET_NAME
 ) -> bool:
-    """Удаление файла из MinIO"""
+    """
+    Удаление файла из MinIO.
+    :param user_id:
+    :param file_name:
+    :param bucket_name:
+    :return:
+    """
     full_file_path = get_user_file_path(user_id, file_name)
     try:
         included_files = s3_client.list_objects_v2(
@@ -104,7 +135,13 @@ def list_user_files(
         path: str="",
         bucket_name=settings.AWS_STORAGE_BUCKET_NAME
 ) -> list[dict]|list:
-    """Получение списка файлов пользователя"""
+    """
+    Получение списка файлов пользователя.
+    :param user_id:
+    :param path:
+    :param bucket_name:
+    :return:
+    """
     full_file_path = get_user_file_path(user_id, path)
     # Префикс папки пользователя
     files = []
@@ -134,7 +171,11 @@ def list_user_files(
 
 
 def generate_breadcrumbs(path: str) -> list[dict]:
-    """Генерация списка breadcrumbs для навигации"""
+    """
+    Генерация списка breadcrumbs для навигации.
+    :param path:
+    :return:
+    """
     breadcrumbs = [{"name": "Root", "path": ""}]
     if path:
         parts = path.split("/")
@@ -168,16 +209,15 @@ settings.AWS_STORAGE_BUCKET_NAME) -> None:
     s3_client.delete_object(Bucket=bucket_name, Key=file_name)
 
 
-def get_file_url(user_id: int, file_name: str) -> str:
-    """Получаем URL для файла в MinIO"""
-    full_file_path = get_user_file_path(user_id, file_name)
-    return (f"{settings.AWS_S3_ENDPOINT_URL}/"
-            f"{settings.AWS_STORAGE_BUCKET_NAME}/{full_file_path}")
-
-
-def create_folder(user_id: int, file_name: str, bucket_name: str =
-settings.AWS_STORAGE_BUCKET_NAME) -> bool:
-    """Создание папки в хранилище MinIO/S3."""
+def create_folder(user_id: int, file_name: str,
+    bucket_name: str = settings.AWS_STORAGE_BUCKET_NAME) -> bool:
+    """
+    Создание папки в хранилище MinIO/S3.
+    :param user_id:
+    :param file_name:
+    :param bucket_name:
+    :return:
+    """
     full_file_path = get_user_file_path(user_id, file_name)
     placeholder_file = full_file_path + "/.keep"
     try:
@@ -187,3 +227,51 @@ settings.AWS_STORAGE_BUCKET_NAME) -> bool:
         raise Exception(f"Не удалось создать папку: {str(exc)}")
     else:
         return True
+
+
+def search_files(user_id: int, query: str,
+    bucket_name=settings.AWS_STORAGE_BUCKET_NAME) -> list[dict]:
+    """
+    Поиск файлов и папок в хранилище MinIO/S3 по имени.
+    :param user_id:
+    :param query:
+    :param bucket_name:
+    :return:
+    """
+    full_prefix = get_user_file_path(user_id, "")  # Префикс папки пользователя
+
+    try:
+        response = s3_client.list_objects_v2(Bucket=bucket_name, Prefix=full_prefix)
+        results = []
+        seen_folders = set()
+
+        for obj in response.get("Contents", []):
+            # Убираем user-{user_id}-files/
+            full_path = obj["Key"].removeprefix(full_prefix)
+            parts = full_path.split("/")
+
+            # Файл
+            if query.lower() in parts[-1].lower():
+                results.append({
+                    "name": parts[-1],
+                    "folder_path": "/".join(parts[:-1]),  # Родительская папка
+                    "is_folder": False
+                })
+
+            # Папка (проверяем все уровни пути)
+            for i in range(len(parts) - 1):
+                folder_name = parts[i]
+                folder_path = "/".join(parts[:i + 1])
+
+                if query.lower() in folder_name.lower() and folder_path not in seen_folders:
+                    results.append({
+                        "name": folder_name + "/",
+                        "folder_path": "/".join(parts[:i]),  # Родительская папка
+                        "is_folder": True
+                    })
+                    seen_folders.add(folder_path)
+
+        return results
+
+    except ClientError as exc:
+        raise StorageError(f"Ошибка поиска файлов пользователя {user_id}: {exc}")

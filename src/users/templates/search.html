@@ -1,21 +1,45 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h2>Результаты поиска</h2>
-
-    <form method="GET" action="{% url 'search' %}" class="mb-3">
-        <input type="text" name="query" value="{{ query }}" class="form-control" placeholder="Поиск файлов...">
+<div class="container mt-4">
+    <h2>Поиск файлов и папок</h2>
+    <form method="GET" action="{% url 'file-search' %}">
+        <div class="input-group mb-3">
+            <input type="text" name="query" class="form-control" placeholder="Введите имя файла или папки..." value="{{ query }}">
+            <button class="btn btn-search" type="submit">Искать</button>
+        </div>
     </form>
 
     {% if files %}
-        <ul class="list-group">
-            {% for file in files %}
-                <li class="list-group-item">
-                    <a href="{% url 'download' file.id %}">{{ file.name }}</a>
-                </li>
-            {% endfor %}
-        </ul>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Название</th>
+                    <th>Расположение</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for file in files %}
+                    <tr>
+                        <td>
+                            {% if file.is_folder %}
+                                📁 {{ file.name }}
+                            {% else %}
+                                {{ file.name }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="/?path={{ file.folder_path }}/"
+                               class="btn btn-search-folder">
+                                /{{ file.folder_path }}
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     {% else %}
-        <p class="text-muted">Ничего не найдено.</p>
+        <p>Файлы и папки не найдены.</p>
     {% endif %}
+</div>
 {% endblock %}
